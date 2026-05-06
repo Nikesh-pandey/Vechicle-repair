@@ -33,7 +33,7 @@ userRegisterDto.setPassword(encode);
     user.setPhoneNumber(userRegisterDto.getPhoneNumber());
     user.setRole(userRegisterDto.getRole());
 userRepository.save(user);
-return user.getName() +"Data Saved Successfully";
+return user.getName() + "Data Saved Successfully";
 }
 
 

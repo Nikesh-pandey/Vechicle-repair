@@ -23,7 +23,10 @@ public class SecurityConfiguration {
                 .csrf(csrf->csrf.disable())
                 .authorizeHttpRequests(auth->auth
                         .requestMatchers("/auth/register","/auth/login").permitAll()
-                        .requestMatchers("/route/**").hasAuthority("ROLE_CUSTOMER")
+                        .requestMatchers("/op/**").hasAuthority("ROLE_OPERATOR")
+                                .requestMatchers("/admin/**").hasAuthority("ROLE_ADMIN")
+
+//                        .requestMatchers("/route/**").hasAuthority("ROLE_CUSTOMER")
                         .anyRequest().authenticated()
                 )
                 .sessionManagement(sess->sess.sessionCreationPolicy(SessionCreationPolicy.STATELESS))

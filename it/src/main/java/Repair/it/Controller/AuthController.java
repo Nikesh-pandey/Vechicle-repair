@@ -24,17 +24,19 @@ import java.util.Map;
 public class AuthController {
     private final UserService userService;
 
-    @PostMapping("register")
+    @PostMapping("/register")
     public ResponseEntity<String> register(@RequestBody UserRegisterDto userRegisterDto){
         return new ResponseEntity<>(userService.register(userRegisterDto), HttpStatus.OK);
     }
+
     @PostMapping("/login")
     public ResponseEntity<Map<String,String>> login(@RequestBody UserLoginDto userLoginDto){
-        System.out.println("catched");
-       String jwt= userService.login(userLoginDto);
-Map<String,String > data= new HashMap<>();
-data.put("jwt",jwt);
-return new ResponseEntity<>(data, HttpStatus.OK);
+        String jwt= userService.login(userLoginDto);
+        Map<String,String > response= new HashMap<>();
+        response.put("Jwt",jwt);
+        return new ResponseEntity<>(response,HttpStatus.OK);
     }
+
+
 
 }

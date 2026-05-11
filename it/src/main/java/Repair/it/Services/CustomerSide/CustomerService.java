@@ -74,16 +74,6 @@ public class CustomerService {
 
 
 
-public RequestServiceDto confirmRequest(RequestServiceDto requestServiceDto,MultipartFile shopImageUrl,Long id){
-
-
-        CustomerResponseDto customerResponseDto= new CustomerResponseDto();
-
-
-
-
-
-}
 
 
 

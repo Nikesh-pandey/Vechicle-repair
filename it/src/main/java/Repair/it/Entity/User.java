@@ -36,6 +36,7 @@ private Role role;
         return List.of(new SimpleGrantedAuthority("ROLE_" + role));
     }
 
+
     @Override
     public String getPassword() {
         return password;

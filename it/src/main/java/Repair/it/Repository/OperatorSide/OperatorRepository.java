@@ -3,6 +3,8 @@ package Repair.it.Repository.OperatorSide;
 import Repair.it.Entity.OperatorSide.OperatorRegisterSide;
 import org.springframework.data.jpa.repository.JpaRepository;
 
-public interface OperatorRepository extends JpaRepository<OperatorRegisterSide,Long> {
+import java.util.Optional;
 
+public interface OperatorRepository extends JpaRepository<OperatorRegisterSide,Long> {
+Optional<OperatorRegisterSide> findByOperator_Id(long id);
 }

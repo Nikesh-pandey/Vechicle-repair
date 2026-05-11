@@ -34,11 +34,13 @@ catch (Exception e) {
     }
 
     @PatchMapping("/responsetoOperator/{id}")
-    public ResponseEntity<AdminResponseDto> ResponseToOperator(
+    public ResponseEntity<?> ResponseToOperator(
             @PathVariable Long id,
             @RequestBody AdminResponseDto adminResponseDto){
         return new ResponseEntity<>(adminService.statusUpdate(id,adminResponseDto),HttpStatus.OK);
     }
+
+
 
 
 

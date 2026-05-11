@@ -45,4 +45,11 @@ public class OperatorRegisterController {
     }
 
 
+    @GetMapping("/getOwnstatus")
+    public ResponseEntity<?> getOwndata(){
+    return ResponseEntity.ok(operatorService.getownData());
+
+
+    }
+
 }

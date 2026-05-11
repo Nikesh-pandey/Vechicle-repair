@@ -34,25 +34,24 @@ public class AdminService {
                 opside.getShopImageUrl();
                 opside.getStatus();
                 opside.getCreatedAt();
-
-
                 OperatorDetails.add(opside);
             }
-
         }
         return OperatorDetails;
 
     }
 
-
     public AdminResponseDto statusUpdate(Long id, AdminResponseDto adminResponseDto) {
-        OperatorRegisterSide operatorRegisterSide = operatorRepository.findById(id).orElseThrow(() -> new RuntimeException("Didnot find the User with this id"));
 
+        OperatorRegisterSide operatorRegisterSide = operatorRepository.findById(id).orElseThrow(() -> new RuntimeException("Didnot find the User with this id"));
         operatorRegisterSide.setStatus(adminResponseDto.getStatus());
         operatorRegisterSide.setMessage(adminResponseDto.getMessage());
-
         operatorRepository.save(operatorRegisterSide);
 return adminResponseDto;
     }
+
+
+
+
 
 }

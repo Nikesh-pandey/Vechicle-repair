@@ -1,14 +1,13 @@
 package Repair.it.Controller.CustomerSide;
 
 
-import Repair.it.Dtos.CustomerSide.CustomerRequestDto;
+import Repair.it.Dtos.Request.CustomerConfirmDto;
+import Repair.it.Dtos.Request.CustomerRequestDto;
 import Repair.it.Services.CustomerSide.CustomerService;
 import lombok.AllArgsConstructor;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 
 @RestController
 @RequestMapping("/cu")
@@ -17,12 +16,17 @@ public class CustomerController {
     private final CustomerService customerService;
 
     @PostMapping("/find")
-    public ResponseEntity<?> returnDistance(@RequestBody  CustomerRequestDto customerRequestDto){
+    public ResponseEntity<?> returnDistance(@RequestBody CustomerRequestDto customerRequestDto){
         System.out.println("haha");
         return customerService.SearchGarage(customerRequestDto);
     }
 
 
+@PostMapping("/confirmRequest/{operatorId}")
+    public  ResponseEntity<?> confirmrequestbyCustomer(@RequestBody CustomerConfirmDto customerConfirmDto, @PathVariable Long operatorId){
+return customerService.customerRequest(customerConfirmDto,operatorId);
+
+}
 
 
 

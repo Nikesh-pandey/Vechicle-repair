@@ -2,26 +2,29 @@ package Repair.it.Services.OperatorSide;
 
 
 import Repair.it.Dtos.AsminSideDtos.AdminResponseDto;
+import Repair.it.Dtos.OperatorSideDtos.GetcustomerRequest;
 import Repair.it.Dtos.OperatorSideDtos.OperatorRegisterDtos;
 import Repair.it.Dtos.OperatorSideDtos.OperatorStatus;
-import Repair.it.Entity.OperatorSide.OperatorRegisterSide;
+import Repair.it.Dtos.OperatorSideDtos.OperatusStatusResponse;
+import Repair.it.Entity.OperatorSide.OperatorGarageRegisterSide;
 import Repair.it.Entity.OperatorSide.RegisterStatus;
+import Repair.it.Entity.Request.CustomerRequestEntity;
 import Repair.it.Entity.User;
 import Repair.it.Enums.Role;
 import Repair.it.Repository.OperatorSide.OperatorRepository;
+import Repair.it.Repository.Request.CustomerRequestRepository;
 import lombok.AllArgsConstructor;
-import lombok.Data;
-import lombok.NoArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
-import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.multipart.MultipartFile;
 import java.io.File;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Paths;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.UUID;
 import jakarta.servlet.http.HttpServletRequest;
 
@@ -29,6 +32,7 @@ import jakarta.servlet.http.HttpServletRequest;
 @AllArgsConstructor
 public class OperatorService {
 private final OperatorRepository operatorRepository;
+private final CustomerRequestRepository customerRequestRepository;
     private static  final String  Uploads="static/uploads/";
     public String registerOperator(
             OperatorRegisterDtos operatorRegisterDtos,
@@ -70,19 +74,19 @@ private final OperatorRepository operatorRepository;
                 .getAuthentication()
                 .getPrincipal();
 
-        OperatorRegisterSide operatorRegisterSide = new OperatorRegisterSide();
+        OperatorGarageRegisterSide operatorGarageRegisterSide = new OperatorGarageRegisterSide();
 
-        operatorRegisterSide.setOperator(operator);
-        operatorRegisterSide.setShopName(operatorRegisterDtos.getShopName());
-        operatorRegisterSide.setAddress(operatorRegisterDtos.getAddress());
-        operatorRegisterSide.setLatitude(operatorRegisterDtos.getLatitude());
-        operatorRegisterSide.setLongitude(operatorRegisterDtos.getLongitude());
-        operatorRegisterSide.setType(operatorRegisterDtos.getType());
-        operatorRegisterSide.setPhNumber(operatorRegisterDtos.getPhNumber());
-        operatorRegisterSide.setShopImageUrl(imageUrl);
-        operatorRegisterSide.setStatus(RegisterStatus.PENDING);
+        operatorGarageRegisterSide.setOperator(operator);
+        operatorGarageRegisterSide.setShopName(operatorRegisterDtos.getShopName());
+        operatorGarageRegisterSide.setAddress(operatorRegisterDtos.getAddress());
+        operatorGarageRegisterSide.setLatitude(operatorRegisterDtos.getLatitude());
+        operatorGarageRegisterSide.setLongitude(operatorRegisterDtos.getLongitude());
+        operatorGarageRegisterSide.setType(operatorRegisterDtos.getType());
+        operatorGarageRegisterSide.setPhNumber(operatorRegisterDtos.getPhNumber());
+        operatorGarageRegisterSide.setShopImageUrl(imageUrl);
+        operatorGarageRegisterSide.setStatus(RegisterStatus.PENDING);
 
-        operatorRepository.save(operatorRegisterSide);
+        operatorRepository.save(operatorGarageRegisterSide);
 
         return "Your request is submitted, You will be notified within 2 hrs";
     }
@@ -90,7 +94,7 @@ private final OperatorRepository operatorRepository;
 
 
     public AdminResponseDto getUpdate(Long id){
-      OperatorRegisterSide operator=  operatorRepository.findById(id).orElseThrow(()-> new RuntimeException("Didnot find user with this id"));
+      OperatorGarageRegisterSide operator=  operatorRepository.findById(id).orElseThrow(()-> new RuntimeException("Didnot find user with this id"));
 AdminResponseDto adminResponseDto = new AdminResponseDto();
 adminResponseDto.setStatus(operator.getStatus());
 adminResponseDto.setMessage(operator.getMessage());
@@ -104,18 +108,57 @@ return adminResponseDto;
 
         User op = (User) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
 
-
         if (!op.getRole().equals(Role.OPERATOR)) {
 
             System.out.println("only Operator can get access of this ");
         }
-            OperatorRegisterSide operatorRegisterSide = operatorRepository.findByOperator_Id(op.getId()).orElseThrow(() -> new RuntimeException("no id found"));
+            OperatorGarageRegisterSide operatorGarageRegisterSide = operatorRepository.findByOperator_Id(op.getId()).orElseThrow(() -> new RuntimeException("no id found"));
         OperatorStatus operatorStatus = new OperatorStatus();
-operatorStatus.setStatus(operatorRegisterSide.getStatus().toString());
+operatorStatus.setStatus(operatorGarageRegisterSide.getStatus().toString());
 
 return operatorStatus;
 
     }
 
+    public ResponseEntity<?> responseToCustomer(){
+
+        User user= (User) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
+        System.out.println("checking"+user.getId());
+      List<  GetcustomerRequest> getcustomerRequest= new ArrayList<>();
+       List<CustomerRequestEntity> customerRequestEntity =customerRequestRepository.findAllByLoggedInUserId(user.getId());
+for(CustomerRequestEntity cu:customerRequestEntity){
+
+    GetcustomerRequest getcustomerRequest1= new GetcustomerRequest();
+   getcustomerRequest1.setName(cu.getCustomer().getName());
+   getcustomerRequest1.setPhoneNumber(cu.getCustomer().getPhoneNumber());
+   getcustomerRequest1.setType( cu.getVechicleType());
+    getcustomerRequest1.setLatitude(cu.getLatitude());
+    getcustomerRequest1.setLongitude(cu.getLongitude());
+    getcustomerRequest1.setDescription(cu.getDescription());
+getcustomerRequest1.setImage(cu.getImage());
+getcustomerRequest1.setStatus(cu.getStatus().toString());
+getcustomerRequest.add(getcustomerRequest1);
+
 
 }
+       return ResponseEntity.ok(getcustomerRequest);
+
+    }
+
+
+    public ResponseEntity<?> responseGiven(OperatusStatusResponse operatusStatusResponse){
+        User user= (User) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
+        System.out.println("this as"+user.getId());
+       CustomerRequestEntity customerRequestEntity= customerRequestRepository.findById(user.getId()).orElseThrow(()-> new RuntimeException("Didnot find with this id"));
+        customerRequestEntity.setStatus(operatusStatusResponse.getStatus());
+
+return ResponseEntity.ok("");
+    }
+
+
+
+
+}
+
+
+

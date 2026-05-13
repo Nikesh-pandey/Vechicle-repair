@@ -8,9 +8,7 @@ import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
-import java.sql.Timestamp;
 import java.time.LocalDateTime;
-import java.time.LocalTime;
 
 @Data
 @AllArgsConstructor
@@ -18,7 +16,7 @@ import java.time.LocalTime;
 @Builder
 @Entity
 @Table(name = "Operator_table")
-public class OperatorRegisterSide {
+public class OperatorGarageRegisterSide {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;

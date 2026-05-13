@@ -1,16 +1,19 @@
 package Repair.it.Services.CustomerSide;
 
-import Repair.it.Dtos.CustomerSide.CustomerRequestDto;
 import Repair.it.Dtos.CustomerSide.CustomerResponseDto;
-import Repair.it.Dtos.CustomerSide.RequestServiceDto;
-import Repair.it.Entity.OperatorSide.OperatorRegisterSide;
+import Repair.it.Dtos.Request.CustomerConfirmDto;
+import Repair.it.Dtos.Request.CustomerRequestDto;
+import Repair.it.Entity.OperatorSide.OperatorGarageRegisterSide;
 import Repair.it.Entity.OperatorSide.RegisterStatus;
+import Repair.it.Entity.OperatorSide.VechicleType;
+import Repair.it.Entity.Request.CustomerRequestEntity;
+import Repair.it.Entity.User;
 import Repair.it.Repository.OperatorSide.OperatorRepository;
+import Repair.it.Repository.Request.CustomerRequestRepository;
 import lombok.AllArgsConstructor;
-import org.springframework.expression.spel.ast.Operator;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
-import org.springframework.web.multipart.MultipartFile;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -19,13 +22,15 @@ import java.util.List;
 @AllArgsConstructor
 public class CustomerService {
     private final OperatorRepository operatorRepository;
-    private static  final String  Uploads="static/uploads/";
+    private final CustomerRequestRepository customerRequestRepository;
+
+    private static final String Uploads = "static/uploads/";
 
     public ResponseEntity<?> SearchGarage(CustomerRequestDto customerRequestDto) {
 
 
         try {
-            List<OperatorRegisterSide> operatorRegisterSides = operatorRepository.findAll();
+            List<OperatorGarageRegisterSide> operatorGarageRegisterSides = operatorRepository.findAll();
 
 
             double customerLat = customerRequestDto.getLatitude();
@@ -34,36 +39,45 @@ public class CustomerService {
             double range = customerRequestDto.getRange();
 
 
-            for (OperatorRegisterSide opsides : operatorRegisterSides) {
+            for (OperatorGarageRegisterSide opsides : operatorGarageRegisterSides) {
                 if (RegisterStatus.APPROVED.equals(opsides.getStatus())) {
-                    double operatorLatitude = opsides.getLatitude();
-                    double operatorLongitude = opsides.getLongitude();
-
-                    double earthRadius = 6371;
-
-                    double latDistance = Math.toRadians(operatorLatitude - customerLat);
-                    double longDistance = Math.toRadians(operatorLongitude - customerLong);
-
-                    double a = Math.sin(latDistance / 2) * Math.sin(latDistance / 2)
-                            + Math.cos(Math.toRadians(customerLat))
-                            * Math.cos(Math.toRadians(operatorLatitude))
-                            * Math.sin(longDistance / 2)
-                            * Math.sin(longDistance / 2);
-
-                    double c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
-                    double distance = earthRadius * c;
-
-                    if (distance > range) {
-                        System.out.println(distance);
-                        continue;
-                    }
                     CustomerResponseDto responseObj = new CustomerResponseDto();
-                    responseObj.setOperatorName(opsides.getOperator().getName());
-                    responseObj.setDistance(distance);
+                    if (customerRequestDto.getVechicleType().equals(opsides.getType())) {
+                        double operatorLatitude = opsides.getLatitude();
+                        double operatorLongitude = opsides.getLongitude();
 
-                    customerResponseDtos.add(responseObj);
+                        double earthRadius = 6371;
+
+                        double latDistance = Math.toRadians(operatorLatitude - customerLat);
+                        double longDistance = Math.toRadians(operatorLongitude - customerLong);
+
+                        double a = Math.sin(latDistance / 2) * Math.sin(latDistance / 2)
+                                + Math.cos(Math.toRadians(customerLat))
+                                * Math.cos(Math.toRadians(operatorLatitude))
+                                * Math.sin(longDistance / 2)
+                                * Math.sin(longDistance / 2);
+
+                        double c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+                        double distance = earthRadius * c;
+
+                        if (distance > range) {
+                            System.out.println(distance);
+                            continue;
+                        }
+                        responseObj.setId(opsides.getId());
+                        responseObj.setShopName(opsides.getShopName());
+                        responseObj.setDistance(distance);
+                        responseObj.setType(opsides.getType());
+                        customerResponseDtos.add(responseObj);
+
+                    }
                 }
-            }    return ResponseEntity.ok(customerResponseDtos);
+
+
+
+            }
+
+            return ResponseEntity.ok(customerResponseDtos);
 
         } catch (Exception e) {
             e.printStackTrace();
@@ -72,8 +86,23 @@ public class CustomerService {
     }
 
 
+    public ResponseEntity<?> customerRequest(CustomerConfirmDto customerConfirmDto, Long garageId) {
 
+        User user = (User) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
+        OperatorGarageRegisterSide operator = operatorRepository.findById(garageId)
+                .orElseThrow(() -> new RuntimeException("Operator not found"));
+        CustomerRequestEntity customerRequestEntity = new CustomerRequestEntity();
+        customerRequestEntity.setCustomer(user);
+        customerRequestEntity.setOperator(operator);
+        customerRequestEntity.setVechicleType(customerConfirmDto.getVechicleType());
+        customerRequestEntity.setLatitude(customerConfirmDto.getLatitude());
+        customerRequestEntity.setLongitude(customerConfirmDto.getLongitude());
+        customerRequestEntity.setDescription(customerConfirmDto.getDescription());
+        customerRequestEntity.setImage(customerConfirmDto.getImage());
+        customerRequestRepository.save(customerRequestEntity);
 
+        return ResponseEntity.ok("You will be notified soon");
+    }
 
 
 

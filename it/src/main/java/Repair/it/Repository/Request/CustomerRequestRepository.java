@@ -14,9 +14,18 @@ public interface CustomerRequestRepository extends JpaRepository<CustomerRequest
 
     @Query(
             nativeQuery = true,
-            value= """
-                    SELECT rt.* FROM `request-table` rt join operator_table ot ON ot.id = rt.operator_id where ot.operator_id= :id ;
-                    """
+            value = """
+
+select rt.* from garage_table gt join request_table rt on gt.id = rt.garage_id where gt.operator_id =:id and rt.status = 'PENDING'
+    
+    """
     )
     List<CustomerRequestEntity> findAllByLoggedInUserId(@Param("id") Long id);
+
+
 }
+//        SELECT rt.*
+//        FROM bankApp.`request-table` rt
+//        WHERE rt.customer_id = :id
+
+// SELECT rt.* FROM `request-table` rt join operator_table ot ON ot.id = rt.operator_id where ot.operator_id= :id AND rt.status='PENDING';

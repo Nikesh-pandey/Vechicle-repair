@@ -2,6 +2,7 @@ package Repair.it.Controller.OperatorSideController;
 
 
 import Repair.it.Dtos.AsminSideDtos.AdminResponseDto;
+import Repair.it.Dtos.OperatorSideDtos.OperatorAcceptRequest;
 import Repair.it.Dtos.OperatorSideDtos.OperatorRegisterDtos;
 import Repair.it.Dtos.OperatorSideDtos.OperatusStatusResponse;
 import Repair.it.Entity.User;
@@ -36,37 +37,26 @@ public class OperatorRegisterController {
         System.out.println(e);
         e.printStackTrace();
         throw e;
-
     }
-
 }
-
     @GetMapping("/getUpdate/{id}")
     public ResponseEntity<AdminResponseDto> getResponse(@PathVariable Long id){
     return new ResponseEntity<>(operatorService.getUpdate(id),HttpStatus.OK);
-
     }
-
 
     @GetMapping("/getOwnstatus")
     public ResponseEntity<?> getOwndata(){
     return ResponseEntity.ok(operatorService.getownData());
-
-
     }
 
     @GetMapping("/getCustomerrequest")
     public  ResponseEntity<?> getCustomerRequest(){
     return operatorService.responseToCustomer();
-
     }
 
-
-    @PatchMapping("/responseStatus")
-
-    public ResponseEntity<?> updateToCustomer(OperatusStatusResponse operatusStatusResponse){
-    return new ResponseEntity<>(operatorService.responseGiven(operatusStatusResponse),HttpStatus.OK);
-
+    @PatchMapping("/responseStatus/{id}")
+    public ResponseEntity<?> updateToCustomer( @RequestBody OperatorAcceptRequest operatorAcceptRequest,@PathVariable  Long id){
+    return new ResponseEntity<>(operatorService.responseGiven(operatorAcceptRequest,id),HttpStatus.OK);
 
     }
 

@@ -1,6 +1,8 @@
 package Repair.it.Controller.CustomerSide;
 
 
+import Repair.it.Dtos.CustomerSide.CreateRequestResponseDto;
+import Repair.it.Dtos.CustomerSide.FinalResponseDto;
 import Repair.it.Dtos.Request.CustomerConfirmDto;
 import Repair.it.Dtos.Request.CustomerRequestDto;
 import Repair.it.Services.CustomerSide.CustomerService;
@@ -8,6 +10,8 @@ import lombok.AllArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+
+import java.util.List;
 
 @RestController
 @RequestMapping("/cu")
@@ -22,13 +26,20 @@ public class CustomerController {
     }
 
 
-@PostMapping("/confirmRequest/{operatorId}")
-    public  ResponseEntity<?> confirmrequestbyCustomer(@RequestBody CustomerConfirmDto customerConfirmDto, @PathVariable Long operatorId){
-return customerService.customerRequest(customerConfirmDto,operatorId);
+    @PostMapping("/confirmRequest/{garageId}")
+    public ResponseEntity<CreateRequestResponseDto> confirmrequestbyCustomer(
+            @RequestBody CustomerConfirmDto customerConfirmDto,
+            @PathVariable Long garageId
+    ) {
+        CreateRequestResponseDto response = customerService.customerRequest(customerConfirmDto, garageId);
+        return ResponseEntity.ok(response);
+    }
 
-}
-
-
+    @GetMapping("/responsefromoperator")
+    public ResponseEntity<List<FinalResponseDto>> getOperatorResponse(){
+        List<FinalResponseDto> response = customerService.getOperatorResponse();
+        return ResponseEntity.ok(response);
+    }
 
 
 }

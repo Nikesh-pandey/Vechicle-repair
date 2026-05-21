@@ -13,13 +13,14 @@ import org.springframework.validation.annotation.Validated;
 @Data
 @Validated
 public class GetcustomerRequest {
-
+private Long id;
     private String name;
     private String phoneNumber;
     private double latitude;
     private double longitude;
     private VechicleType type;
 private String image;
+private String customerid;
 private String description;
 private String status;
 

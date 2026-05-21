@@ -2,15 +2,13 @@ package Repair.it.Services.OperatorSide;
 
 
 import Repair.it.Dtos.AsminSideDtos.AdminResponseDto;
-import Repair.it.Dtos.OperatorSideDtos.GetcustomerRequest;
-import Repair.it.Dtos.OperatorSideDtos.OperatorRegisterDtos;
-import Repair.it.Dtos.OperatorSideDtos.OperatorStatus;
-import Repair.it.Dtos.OperatorSideDtos.OperatusStatusResponse;
+import Repair.it.Dtos.OperatorSideDtos.*;
 import Repair.it.Entity.OperatorSide.OperatorGarageRegisterSide;
 import Repair.it.Entity.OperatorSide.RegisterStatus;
 import Repair.it.Entity.Request.CustomerRequestEntity;
 import Repair.it.Entity.User;
 import Repair.it.Enums.Role;
+import Repair.it.Repository.CustomerSide.CustomerRepository;
 import Repair.it.Repository.OperatorSide.OperatorRepository;
 import Repair.it.Repository.Request.CustomerRequestRepository;
 import lombok.AllArgsConstructor;
@@ -33,6 +31,9 @@ import jakarta.servlet.http.HttpServletRequest;
 public class OperatorService {
 private final OperatorRepository operatorRepository;
 private final CustomerRequestRepository customerRequestRepository;
+
+
+
     private static  final String  Uploads="static/uploads/";
     public String registerOperator(
             OperatorRegisterDtos operatorRegisterDtos,
@@ -85,7 +86,6 @@ private final CustomerRequestRepository customerRequestRepository;
         operatorGarageRegisterSide.setPhNumber(operatorRegisterDtos.getPhNumber());
         operatorGarageRegisterSide.setShopImageUrl(imageUrl);
         operatorGarageRegisterSide.setStatus(RegisterStatus.PENDING);
-
         operatorRepository.save(operatorGarageRegisterSide);
 
         return "Your request is submitted, You will be notified within 2 hrs";
@@ -102,6 +102,7 @@ return adminResponseDto;
     }
 
 
+
     //New Api added
 
     public OperatorStatus getownData() {
@@ -115,45 +116,65 @@ return adminResponseDto;
             OperatorGarageRegisterSide operatorGarageRegisterSide = operatorRepository.findByOperator_Id(op.getId()).orElseThrow(() -> new RuntimeException("no id found"));
         OperatorStatus operatorStatus = new OperatorStatus();
 operatorStatus.setStatus(operatorGarageRegisterSide.getStatus().toString());
-
 return operatorStatus;
-
     }
+
+
+
 
     public ResponseEntity<?> responseToCustomer(){
-
         User user= (User) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
-        System.out.println("checking"+user.getId());
       List<  GetcustomerRequest> getcustomerRequest= new ArrayList<>();
        List<CustomerRequestEntity> customerRequestEntity =customerRequestRepository.findAllByLoggedInUserId(user.getId());
-for(CustomerRequestEntity cu:customerRequestEntity){
+               System.out.println("checking this"+user.getId());
 
-    GetcustomerRequest getcustomerRequest1= new GetcustomerRequest();
-   getcustomerRequest1.setName(cu.getCustomer().getName());
-   getcustomerRequest1.setPhoneNumber(cu.getCustomer().getPhoneNumber());
-   getcustomerRequest1.setType( cu.getVechicleType());
-    getcustomerRequest1.setLatitude(cu.getLatitude());
-    getcustomerRequest1.setLongitude(cu.getLongitude());
-    getcustomerRequest1.setDescription(cu.getDescription());
-getcustomerRequest1.setImage(cu.getImage());
-getcustomerRequest1.setStatus(cu.getStatus().toString());
-getcustomerRequest.add(getcustomerRequest1);
+        for(CustomerRequestEntity cu:customerRequestEntity) {
 
-
-}
-       return ResponseEntity.ok(getcustomerRequest);
+                GetcustomerRequest getcustomerRequest1 = new GetcustomerRequest();
+getcustomerRequest1.setId(cu.getId());
+                            getcustomerRequest1.setName(cu.getCustomer().getName());
+                getcustomerRequest1.setPhoneNumber(cu.getCustomer().getPhoneNumber());
+                getcustomerRequest1.setType(cu.getVechicleType());
+                getcustomerRequest1.setLatitude(cu.getLatitude());
+                getcustomerRequest1.setLongitude(cu.getLongitude());
+                getcustomerRequest1.setDescription(cu.getDescription());
+                getcustomerRequest1.setImage(cu.getImage());
+                getcustomerRequest1.setCustomerid(cu.getCustomer().getId().toString());
+                getcustomerRequest1.setStatus(cu.getStatus().toString());
+                getcustomerRequest.add(getcustomerRequest1);
+            }
+            return ResponseEntity.ok(getcustomerRequest);
 
     }
 
 
-    public ResponseEntity<?> responseGiven(OperatusStatusResponse operatusStatusResponse){
+
+    public OperatusStatusResponse responseGiven(OperatorAcceptRequest operatorAcceptRequest,Long id){
         User user= (User) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
-        System.out.println("this as"+user.getId());
-       CustomerRequestEntity customerRequestEntity= customerRequestRepository.findById(user.getId()).orElseThrow(()-> new RuntimeException("Didnot find with this id"));
-        customerRequestEntity.setStatus(operatusStatusResponse.getStatus());
+OperatusStatusResponse operatusStatusResponse= new OperatusStatusResponse();
+        System.out.println(id.toString());
+        CustomerRequestEntity customerRequestEntity= customerRequestRepository.findById(id).orElseThrow(()-> new RuntimeException("Didnot find with this id"));
 
-return ResponseEntity.ok("");
+        System.out.println(id);
+            customerRequestEntity.setStatus(operatorAcceptRequest.getStatus());
+            customerRequestEntity.setMessage(operatorAcceptRequest.getMessage());
+            customerRequestRepository.save(customerRequestEntity);
+            //customer
+
+
+            operatusStatusResponse.setName(user.getName());
+            operatusStatusResponse.setPhnumber(user.getPhoneNumber());
+            operatusStatusResponse.setStatus(customerRequestEntity.getStatus());
+            operatusStatusResponse.setMessage(customerRequestEntity.getMessage());
+operatusStatusResponse.setCustomerLat(customerRequestEntity.getLatitude());
+operatusStatusResponse.setCustomerLng(customerRequestEntity.getLongitude());
+operatusStatusResponse.setGarageLat(customerRequestEntity.getOperator().getLatitude());
+operatusStatusResponse.setGarageLng(customerRequestEntity.getOperator().getLongitude());
+
+            return operatusStatusResponse;
+
     }
+
 
 
 

@@ -40,6 +40,7 @@ public class AdminService {
 
     }
 
+
     public AdminResponseDto statusUpdate(Long id, AdminResponseDto adminResponseDto) {
 
         OperatorGarageRegisterSide operatorGarageRegisterSide = operatorRepository.findById(id).orElseThrow(() -> new RuntimeException("Didnot find the User with this id"));

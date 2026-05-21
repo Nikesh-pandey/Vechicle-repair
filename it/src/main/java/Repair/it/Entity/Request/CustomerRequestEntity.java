@@ -14,7 +14,7 @@ import org.springframework.validation.annotation.Validated;
 import java.time.LocalDateTime;
 
 @Entity
-@Table(name = "request-table")
+@Table(name = "request_table")
 @AllArgsConstructor
 @NoArgsConstructor
 @Data
@@ -28,6 +28,7 @@ public class CustomerRequestEntity {
     private User customer;
 
     @ManyToOne
+    @JoinColumn(name = "garage_id")
     private OperatorGarageRegisterSide operator;
 
     @Enumerated(EnumType.STRING)
@@ -44,6 +45,7 @@ public class CustomerRequestEntity {
 
     private String rejectionReason;
     private String image;
+    private String message;
     private LocalDateTime createdAt;
     @PrePersist
     public void onCreate(){

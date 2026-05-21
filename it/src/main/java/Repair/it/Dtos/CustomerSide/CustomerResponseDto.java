@@ -15,6 +15,5 @@ public class CustomerResponseDto {
     private String shopName;
     private double distance;
     private VechicleType type;
-
 private String image;
 }

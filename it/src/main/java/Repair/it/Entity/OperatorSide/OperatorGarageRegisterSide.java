@@ -8,17 +8,15 @@ import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
-import java.sql.Timestamp;
 import java.time.LocalDateTime;
-import java.time.LocalTime;
 
 @Data
 @AllArgsConstructor
 @NoArgsConstructor(force = true)
 @Builder
 @Entity
-@Table(name = "Operator_table")
-public class OperatorRegisterSide {
+@Table(name = "garage_table")
+public class OperatorGarageRegisterSide {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
@@ -47,4 +45,5 @@ private String message;
     public void onCreate(){
         createdAt = LocalDateTime.now();
     }
+
 }

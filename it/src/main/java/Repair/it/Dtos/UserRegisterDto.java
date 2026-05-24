@@ -1,6 +1,7 @@
 package Repair.it.Dtos;
 
 import Repair.it.Enums.Role;
+import jakarta.persistence.Column;
 import jakarta.persistence.EnumType;
 import jakarta.persistence.Enumerated;
 import jakarta.validation.constraints.Email;
@@ -19,12 +20,14 @@ import lombok.NoArgsConstructor;
 public class UserRegisterDto {
     @NotBlank(message = "Name is required")
     private String name;
+@Column(nullable = false,unique = true)
     @Email(message = "Email should be in valid format")
     private String email;
     @NotBlank(message = "Please enter password")
     @Size(min = 7)
     private String password;
     @Pattern(regexp = "^[0-9]{10}$", message = "Phone number must be 10 digits")
+    @Column(nullable = false, unique = true)
     private String phoneNumber;
     private Role role;
 }

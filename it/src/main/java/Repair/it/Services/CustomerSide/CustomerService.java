@@ -1,9 +1,6 @@
 package Repair.it.Services.CustomerSide;
 
-import Repair.it.Dtos.CustomerSide.CreateRequestResponseDto;
-import Repair.it.Dtos.CustomerSide.CustomerRequestProjection;
-import Repair.it.Dtos.CustomerSide.CustomerResponseDto;
-import Repair.it.Dtos.CustomerSide.FinalResponseDto;
+import Repair.it.Dtos.CustomerSide.*;
 import Repair.it.Dtos.Request.CustomerConfirmDto;
 import Repair.it.Dtos.Request.CustomerRequestDto;
 import Repair.it.Entity.OperatorSide.OperatorGarageRegisterSide;
@@ -116,19 +113,19 @@ public class CustomerService {
 
         User user= (User) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
 
-
-
         List<CustomerRequestProjection> customerRequestProjection= customerRepository.findOperatorIdByCustomerId(user.getId());
-
 
         List<FinalResponseDto> finalResponseDtos= new ArrayList<>();
 
         for(CustomerRequestProjection cur:customerRequestProjection){
             FinalResponseDto finalResponseDto= new FinalResponseDto();
+            finalResponseDto.setId(cur.getId());
             finalResponseDto.setName(cur.getName());
             finalResponseDto.setPhnumber(cur.getPhoneNumber());
             finalResponseDto.setMessage(cur.getMessage());
             finalResponseDto.setStatus(cur.getStatus());
+            finalResponseDto.setPrice(cur.getPrice());
+            finalResponseDto.setPaid(cur.getPaid());
 
             finalResponseDtos.add(finalResponseDto);
 
@@ -139,4 +136,22 @@ return finalResponseDtos;
     }
 
 
+    public PaymentDto seePrice(PaymentDto paymentDto, Long id) {
+        CustomerRequestEntity customerRequestEntity1 = customerRequestRepository
+                .findById(id)
+                .orElseThrow(() -> new RuntimeException("Did not find this id"));
+
+        System.out.println("Request ID: " + id);
+        System.out.println("Price in DB: " + customerRequestEntity1.getPrice());
+        System.out.println("Amount sent: " + paymentDto.getAmount());
+
+        if (paymentDto.getAmount() < customerRequestEntity1.getPrice()) {
+            throw new RuntimeException("You need to pay actual price");
+        } else {
+            customerRequestEntity1.setPaid(true);
+            customerRequestRepository.save(customerRequestEntity1);
+        }
+
+        return paymentDto;
+    }
 }

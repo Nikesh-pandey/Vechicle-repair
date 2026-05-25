@@ -7,4 +7,7 @@ public interface CustomerRequestProjection {
     String getPhoneNumber();
     String getMessage();
     RegisterStatus getStatus();
+    Long getId();
+    Double getPrice();
+    Boolean getPaid();
 }

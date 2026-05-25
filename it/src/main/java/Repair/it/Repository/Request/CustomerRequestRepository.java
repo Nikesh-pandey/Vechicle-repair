@@ -38,11 +38,15 @@ select rt.* from garage_table gt join request_table rt on gt.id = rt.garage_id w
     @Query(
             nativeQuery = true,
             value = """
-                    select SUM(rt.price) from request_table rt join garage_table gt on rt.garage_id=gt.id where gt.operator_id=:id And rt.status="COMPLETED";
-                    """
-    )
-    double findtotalprice(Long id);
 
+                    SELECT SUM(rt.price) FROM request_table rt\s
+JOIN garage_table gt ON rt.garage_id = gt.id\s
+WHERE gt.operator_id = :id\s
+AND rt.status = 'COMPLETED'\s
+AND rt.paid = true
+"""
+    )
+    double findTotalPrice(@Param("id") Long id);
 }
 //        SELECT rt.*
 //        FROM bankApp.`request-table` rt

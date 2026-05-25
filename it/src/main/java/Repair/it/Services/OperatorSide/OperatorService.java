@@ -6,11 +6,13 @@ import Repair.it.Dtos.OperatorSideDtos.*;
 import Repair.it.Entity.OperatorSide.OperatorGarageRegisterSide;
 import Repair.it.Entity.OperatorSide.RegisterStatus;
 import Repair.it.Entity.Request.CustomerRequestEntity;
+import Repair.it.Entity.RequestStatusHistory;
 import Repair.it.Entity.User;
 import Repair.it.Enums.Role;
 import Repair.it.Repository.CustomerSide.CustomerRepository;
 import Repair.it.Repository.OperatorSide.OperatorRepository;
 import Repair.it.Repository.Request.CustomerRequestRepository;
+import Repair.it.Repository.RequestHistory.RequestStatusHistoryRepository;
 import lombok.AllArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -21,6 +23,7 @@ import java.io.File;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Paths;
+import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
@@ -31,7 +34,7 @@ import jakarta.servlet.http.HttpServletRequest;
 public class OperatorService {
 private final OperatorRepository operatorRepository;
 private final CustomerRequestRepository customerRequestRepository;
-
+private final RequestStatusHistoryRepository requestStatusHistoryRepository;
 
 
     private static  final String  Uploads="static/uploads/";
@@ -150,6 +153,7 @@ getcustomerRequest1.setId(cu.getId());
 
 
     public OperatusStatusResponse responseGiven(OperatorAcceptRequest operatorAcceptRequest, Long id) {
+        System.out.println("Status received: " + operatorAcceptRequest.getStatus());
         User user = (User) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
         OperatusStatusResponse operatusStatusResponse = new OperatusStatusResponse();
 
@@ -161,12 +165,30 @@ getcustomerRequest1.setId(cu.getId());
         customerRequestEntity.setStatus(operatorAcceptRequest.getStatus());
         customerRequestEntity.setMessage(operatorAcceptRequest.getMessage());
         customerRequestEntity.setPrice(operatorAcceptRequest.getPrice());
-
-        if (customerRequestEntity.getStatus().equals(RegisterStatus.COMPLETED)) {
-            customerRequestEntity.setAdminCommission(customerRequestEntity.getPrice() * 0.10);
+        System.out.println("Price received: " + operatorAcceptRequest.getPrice());
+        if(customerRequestEntity.getStatus().equals(RegisterStatus.ACCEPTED)){
+            customerRequestEntity.setAcceptedAt(LocalDateTime.now());
+        } else if(customerRequestEntity.getStatus().equals(RegisterStatus.ON_THE_WAY)){
+            customerRequestEntity.setOnTheWayAt(LocalDateTime.now());
+        } else if(customerRequestEntity.getStatus().equals(RegisterStatus.ARRIVED)){
+            customerRequestEntity.setArrivedAt(LocalDateTime.now());
+        } else if(customerRequestEntity.getStatus().equals(RegisterStatus.IN_PROGRESS)){
+            customerRequestEntity.setInProgressAt(LocalDateTime.now());
+        } else if(customerRequestEntity.getStatus().equals(RegisterStatus.COMPLETED)){
+            customerRequestEntity.setCompletedAt(LocalDateTime.now());
+            if(customerRequestEntity.getPrice() != null){
+                customerRequestEntity.setAdminCommission(customerRequestEntity.getPrice() * 0.10);
+            }
         }
 
         customerRequestRepository.save(customerRequestEntity);
+
+        RequestStatusHistory history = new RequestStatusHistory();
+        history.setOperator(user);
+        history.setCustomer(customerRequestEntity.getCustomer());
+        history.setRequest(customerRequestEntity);
+        history.setAction(customerRequestEntity.getStatus());
+        requestStatusHistoryRepository.save(history);
 
         operatusStatusResponse.setName(user.getName());
         operatusStatusResponse.setPhnumber(user.getPhoneNumber());
@@ -180,6 +202,10 @@ getcustomerRequest1.setId(cu.getId());
 
         return operatusStatusResponse;
     }
+
+
+
+
 
     private void validateStatusTransition(RegisterStatus current, RegisterStatus next) {
         if (current == RegisterStatus.PENDING && next != RegisterStatus.ACCEPTED && next != RegisterStatus.CANCELLED) {
@@ -223,12 +249,13 @@ return  operatorCompletedRequests;
     }
 
 
+
     //earning ko dincha like income
 
     public EarningsDto getEarnings() {
         User user = (User) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
 
-        Double totalTransaction = customerRequestRepository.findtotalprice(user.getId());
+        Double totalTransaction = customerRequestRepository.findTotalPrice(user.getId());
         if(totalTransaction == null) totalTransaction = 0.0;
 
         Double adminCommission = totalTransaction * 0.10;

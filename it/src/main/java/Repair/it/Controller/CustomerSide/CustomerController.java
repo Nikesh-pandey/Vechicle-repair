@@ -3,6 +3,7 @@ package Repair.it.Controller.CustomerSide;
 
 import Repair.it.Dtos.CustomerSide.CreateRequestResponseDto;
 import Repair.it.Dtos.CustomerSide.FinalResponseDto;
+import Repair.it.Dtos.CustomerSide.PaymentDto;
 import Repair.it.Dtos.Request.CustomerConfirmDto;
 import Repair.it.Dtos.Request.CustomerRequestDto;
 import Repair.it.Services.CustomerSide.CustomerService;
@@ -26,6 +27,7 @@ public class CustomerController {
     }
 
 
+
     @PostMapping("/confirmRequest/{garageId}")
     public ResponseEntity<CreateRequestResponseDto> confirmrequestbyCustomer(
             @RequestBody CustomerConfirmDto customerConfirmDto,
@@ -40,6 +42,9 @@ public class CustomerController {
         List<FinalResponseDto> response = customerService.getOperatorResponse();
         return ResponseEntity.ok(response);
     }
-
+    @PostMapping("/payment/{id}")
+    public ResponseEntity<?> payment(@RequestBody PaymentDto paymentDto, @PathVariable Long id) {
+        return ResponseEntity.ok(customerService.seePrice(paymentDto, id));
+    }
 
 }

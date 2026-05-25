@@ -10,14 +10,24 @@ import java.util.List;
 import java.util.Optional;
 
 public interface CustomerRepository extends JpaRepository<CustomerRequestEntity,Long>{
+//    @Query(
+//            nativeQuery = true,
+//            value = """
+//select rt.*,ud.* from garage_table gt join request_table rt  on gt.id=rt.garage_id  join users_data ud on gt.operator_id=ud.id where rt.customer_id=:id;
+//"""
+//    )
+
+
+
     @Query(
             nativeQuery = true,
             value = """
-select rt.*,ud.* from garage_table gt join request_table rt  on gt.id=rt.garage_id  join users_data ud on gt.operator_id=ud.id where rt.customer_id=:id;
-"""
-
-
-
+select rt.id, ud.name, ud.phone_number, rt.message, rt.status, rt.price, rt.paid
+from garage_table gt
+join request_table rt on gt.id=rt.garage_id
+join users_data ud on gt.operator_id=ud.id
+where rt.customer_id=:id;
+    """
     )
     List<CustomerRequestProjection> findOperatorIdByCustomerId(@Param("id") Long customerId);
 

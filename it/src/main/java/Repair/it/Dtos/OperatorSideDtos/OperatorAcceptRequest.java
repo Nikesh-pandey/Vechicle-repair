@@ -16,6 +16,6 @@ public class OperatorAcceptRequest {
     private RegisterStatus status;
     private String message;
     private Double price;
-    private Double adminCommission;
+
 
 }

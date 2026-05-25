@@ -49,6 +49,12 @@ public class CustomerRequestEntity {
     private Double price;
     private Double adminCommission;
     private LocalDateTime createdAt;
+    private boolean paid;
+    private LocalDateTime acceptedAt;
+    private LocalDateTime onTheWayAt;
+    private LocalDateTime arrivedAt;
+    private LocalDateTime inProgressAt;
+    private LocalDateTime completedAt;
     @PrePersist
     public void onCreate(){
         createdAt = LocalDateTime.now();

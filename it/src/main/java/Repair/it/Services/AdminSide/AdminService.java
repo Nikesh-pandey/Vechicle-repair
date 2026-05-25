@@ -2,8 +2,11 @@ package Repair.it.Services.AdminSide;
 
 
 import Repair.it.Dtos.AsminSideDtos.AdminResponseDto;
+import Repair.it.Dtos.StatusHistory.StatusHistoryDto;
 import Repair.it.Entity.OperatorSide.OperatorGarageRegisterSide;
+import Repair.it.Entity.RequestStatusHistory;
 import Repair.it.Repository.OperatorSide.OperatorRepository;
+import Repair.it.Repository.RequestHistory.RequestStatusHistoryRepository;
 import lombok.AllArgsConstructor;
 import org.springframework.stereotype.Service;
 
@@ -14,7 +17,7 @@ import java.util.List;
 @AllArgsConstructor
 public class AdminService {
     private final OperatorRepository operatorRepository;
-
+private final RequestStatusHistoryRepository requestStatusHistoryRepository;
     public ArrayList<OperatorGarageRegisterSide> getOperatorData() {
         ArrayList<OperatorGarageRegisterSide> OperatorDetails = new ArrayList<>();
         List<OperatorGarageRegisterSide> OperatorSide = operatorRepository.findAll();
@@ -51,7 +54,25 @@ return adminResponseDto;
     }
 
 
-
+    public List<StatusHistoryDto> getAllHistory() {
+        List<RequestStatusHistory> histories = requestStatusHistoryRepository.findAllByOrderByTimestampDesc();
+        List<StatusHistoryDto> dtos = new ArrayList<>();
+        for(RequestStatusHistory h : histories) {
+            StatusHistoryDto dto = new StatusHistoryDto();
+            dto.setRequestId(h.getRequest().getId());
+            dto.setOperatorName(h.getOperator().getName());
+            dto.setOperatorPhone(h.getOperator().getPhoneNumber());
+            dto.setCustomerName(h.getCustomer().getName());
+            dto.setCustomerPhone(h.getCustomer().getPhoneNumber());
+            dto.setAction(h.getAction().toString());
+            dto.setTimestamp(h.getTimestamp());
+            dto.setPrice(h.getRequest().getPrice());
+            dto.setVehicleType(h.getRequest().getVechicleType().toString());
+            dto.setDescription(h.getRequest().getDescription());
+            dtos.add(dto);
+        }
+        return dtos;
+    }
 
 
 }

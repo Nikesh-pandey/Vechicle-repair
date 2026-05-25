@@ -40,7 +40,10 @@ catch (Exception e) {
         return new ResponseEntity<>(adminService.statusUpdate(id,adminResponseDto),HttpStatus.OK);
     }
 
-
+    @GetMapping("/history")
+    public ResponseEntity<?> getAllHistory() {
+        return ResponseEntity.ok(adminService.getAllHistory());
+    }
 
 
 

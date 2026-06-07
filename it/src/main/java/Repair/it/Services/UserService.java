@@ -1,69 +1,62 @@
 package Repair.it.Services;
 
-
 import Repair.it.Config.JwtService;
+import Repair.it.Dtos.User.ChangePasswordDto;
+import Repair.it.Dtos.User.UpdateProfileDto;
 import Repair.it.Dtos.User.UserLoginDto;
 import Repair.it.Dtos.UserRegisterDto;
 import Repair.it.Entity.User;
 import Repair.it.Repository.UserRepository;
-import lombok.AllArgsConstructor;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
+
 @Service
 @RequiredArgsConstructor
 public class UserService {
-private  final UserRepository userRepository;
-private  final PasswordEncoder passwordEncoder;
-private final AuthenticationManager authenticationManager;
-private final JwtService jwtService;
-public String register(UserRegisterDto userRegisterDto){
 
-String encode= passwordEncoder.encode(userRegisterDto.getPassword());
-userRegisterDto.setPassword(encode);
+    private final UserRepository userRepository;
+    private final PasswordEncoder passwordEncoder;
+    private final AuthenticationManager authenticationManager;
+    private final JwtService jwtService;
 
-    User user= new User();
-    user.setName(userRegisterDto.getName());
-    user.setEmail(userRegisterDto.getEmail());
-    user.setPassword(userRegisterDto.getPassword());
-    user.setPhoneNumber(userRegisterDto.getPhoneNumber());
-    user.setRole(userRegisterDto.getRole());
-userRepository.save(user);
-return user.getName() + "Data Saved Successfully";
-}
-
-
-public String login(UserLoginDto userLoginDto){
-    System.out.println("check in Service");
-    try{
- Authentication auth=   authenticationManager.authenticate(
-         new   UsernamePasswordAuthenticationToken(
-                    userLoginDto.getEmail(),
-                    userLoginDto.getPassword()
-                    )
-
-    );
-    System.out.println("catch2");
-UserDetails userDetails= (UserDetails) auth.getPrincipal();
- String jwt= jwtService.generateToken(userDetails);
-
- return jwt;
-    }
-    catch (Exception e){
-        System.out.println("Message"+ e.getMessage());
-        e.printStackTrace();
-        throw e;
-
+    public String register(UserRegisterDto dto) {
+        User user = new User();
+        user.setName(dto.getName());
+        user.setEmail(dto.getEmail());
+        user.setPassword(passwordEncoder.encode(dto.getPassword()));
+        user.setPhoneNumber(dto.getPhoneNumber());
+        user.setRole(dto.getRole());
+        userRepository.save(user);
+        return user.getName() + " registered successfully";
     }
 
+    public String login(UserLoginDto dto) {
+        Authentication auth = authenticationManager.authenticate(
+                new UsernamePasswordAuthenticationToken(dto.getEmail(), dto.getPassword())
+        );
+        UserDetails userDetails = (UserDetails) auth.getPrincipal();
+        return jwtService.generateToken(userDetails);
+    }
 
-}
+    public void updateProfile(UpdateProfileDto dto) {
+        User user = (User) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
+        user.setName(dto.getName());
+        user.setPhoneNumber(dto.getPhoneNumber());
+        userRepository.save(user);
+    }
 
-
-
-
+    public void changePassword(ChangePasswordDto dto) {
+        User user = (User) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
+        if (!passwordEncoder.matches(dto.getCurrentPassword(), user.getPassword())) {
+            throw new RuntimeException("Current password is incorrect");
+        }
+        user.setPassword(passwordEncoder.encode(dto.getNewPassword()));
+        userRepository.save(user);
+    }
 }

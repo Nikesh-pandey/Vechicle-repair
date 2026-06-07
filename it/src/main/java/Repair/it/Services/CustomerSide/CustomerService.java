@@ -5,12 +5,13 @@ import Repair.it.Dtos.Request.CustomerConfirmDto;
 import Repair.it.Dtos.Request.CustomerRequestDto;
 import Repair.it.Entity.OperatorSide.OperatorGarageRegisterSide;
 import Repair.it.Entity.OperatorSide.RegisterStatus;
-import Repair.it.Entity.OperatorSide.VechicleType;
 import Repair.it.Entity.Request.CustomerRequestEntity;
+import Repair.it.Entity.Review.ReviewEntity;
 import Repair.it.Entity.User;
 import Repair.it.Repository.CustomerSide.CustomerRepository;
 import Repair.it.Repository.OperatorSide.OperatorRepository;
 import Repair.it.Repository.Request.CustomerRequestRepository;
+import Repair.it.Repository.ReviewSide.ReviewRepository;
 import lombok.AllArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.context.SecurityContextHolder;
@@ -22,136 +23,180 @@ import java.util.List;
 @Service
 @AllArgsConstructor
 public class CustomerService {
+
     private final OperatorRepository operatorRepository;
     private final CustomerRequestRepository customerRequestRepository;
     private final CustomerRepository customerRepository;
-
-    private static final String Uploads = "static/uploads/";
+    private final ReviewRepository reviewRepository;
 
     public ResponseEntity<?> SearchGarage(CustomerRequestDto customerRequestDto) {
-        try {
-            List<OperatorGarageRegisterSide> operatorGarageRegisterSides = operatorRepository.findAll();
-            double customerLat = customerRequestDto.getLatitude();
-            double customerLong = customerRequestDto.getLongitude();
-            List<CustomerResponseDto> customerResponseDtos = new ArrayList<>();
-            double range = customerRequestDto.getRange();
-            for (OperatorGarageRegisterSide opsides : operatorGarageRegisterSides) {
-                if (RegisterStatus.APPROVED.equals(opsides.getStatus())) {
-                    CustomerResponseDto responseObj = new CustomerResponseDto();
-                    if (customerRequestDto.getVechicleType().equals(opsides.getType())) {
-                        double operatorLatitude = opsides.getLatitude();
-                        double operatorLongitude = opsides.getLongitude();
-                        double earthRadius = 6371;
-                        double latDistance = Math.toRadians(operatorLatitude - customerLat);
-                        double longDistance = Math.toRadians(operatorLongitude - customerLong);
-                        double a = Math.sin(latDistance / 2) * Math.sin(latDistance / 2)
-                                + Math.cos(Math.toRadians(customerLat))
-                                * Math.cos(Math.toRadians(operatorLatitude))
-                                * Math.sin(longDistance / 2)
-                                * Math.sin(longDistance / 2);
-                        double c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
-                        double distance = earthRadius * c;
-                        if (distance > range) {
-                            System.out.println(distance);
-                            continue;
-                        }
-                        responseObj.setId(opsides.getId());
-                        responseObj.setShopName(opsides.getShopName());
-                        responseObj.setDistance(distance);
-                        responseObj.setType(opsides.getType());
-                        customerResponseDtos.add(responseObj);
+        List<OperatorGarageRegisterSide> allGarages = operatorRepository.findAll();
+        double customerLat = customerRequestDto.getLatitude();
+        double customerLng = customerRequestDto.getLongitude();
+        double range = customerRequestDto.getRange();
+        List<CustomerResponseDto> result = new ArrayList<>();
 
-                    }
-                }
-            }
+        for (OperatorGarageRegisterSide garage : allGarages) {
+            if (!RegisterStatus.APPROVED.equals(garage.getStatus())) continue;
+            if (!customerRequestDto.getVechicleType().equals(garage.getType())) continue;
 
-            return ResponseEntity.ok(customerResponseDtos);
+            double latDiff = Math.toRadians(garage.getLatitude() - customerLat);
+            double lngDiff = Math.toRadians(garage.getLongitude() - customerLng);
+            double a = Math.sin(latDiff / 2) * Math.sin(latDiff / 2)
+                    + Math.cos(Math.toRadians(customerLat))
+                    * Math.cos(Math.toRadians(garage.getLatitude()))
+                    * Math.sin(lngDiff / 2) * Math.sin(lngDiff / 2);
+            double distance = 6371 * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
 
-        } catch (Exception e) {
-            e.printStackTrace();
-            return null;
+            if (distance > range) continue;
+
+            CustomerResponseDto dto = new CustomerResponseDto();
+            dto.setId(garage.getId());
+            dto.setShopName(garage.getShopName());
+            dto.setDistance(distance);
+            dto.setType(garage.getType());
+            result.add(dto);
         }
+        return ResponseEntity.ok(result);
     }
 
-    public CreateRequestResponseDto customerRequest(
-            CustomerConfirmDto customerConfirmDto,
-            Long garageId
-    ) {
-        User user = (User) SecurityContextHolder
-                .getContext()
-                .getAuthentication()
-                .getPrincipal();
+    public CreateRequestResponseDto customerRequest(CustomerConfirmDto customerConfirmDto, Long garageId) {
+        User user = (User) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
+        OperatorGarageRegisterSide operator = operatorRepository.findById(garageId)
+                .orElseThrow(() -> new RuntimeException("Garage not found with id: " + garageId));
 
-        OperatorGarageRegisterSide operator = operatorRepository
-                .findById(garageId)
-                .orElseThrow(() -> new RuntimeException("Operator not found"));
-
-        CustomerRequestEntity customerRequestEntity = new CustomerRequestEntity();
-        customerRequestEntity.setCustomer(user);
-        customerRequestEntity.setOperator(operator);
-        customerRequestEntity.setVechicleType(customerConfirmDto.getVechicleType());
-        customerRequestEntity.setLatitude(customerConfirmDto.getLatitude());
-        customerRequestEntity.setLongitude(customerConfirmDto.getLongitude());
-        customerRequestEntity.setDescription(customerConfirmDto.getDescription());
-        customerRequestEntity.setImage(customerConfirmDto.getImage());
-
-        customerRequestRepository.save(customerRequestEntity);
+        CustomerRequestEntity entity = new CustomerRequestEntity();
+        entity.setCustomer(user);
+        entity.setOperator(operator);
+        entity.setVechicleType(customerConfirmDto.getVechicleType());
+        entity.setLatitude(customerConfirmDto.getLatitude());
+        entity.setLongitude(customerConfirmDto.getLongitude());
+        entity.setDescription(customerConfirmDto.getDescription());
+        entity.setImage(customerConfirmDto.getImage());
+        customerRequestRepository.save(entity);
 
         CreateRequestResponseDto response = new CreateRequestResponseDto();
-        response.setCustomer(customerRequestEntity.getCustomer());
-        response.setOperator(customerRequestEntity.getOperator());
-        response.setLatitude(customerRequestEntity.getLatitude());
-        response.setLongitude(customerRequestEntity.getLongitude());
-        response.setDescription(customerRequestEntity.getDescription());
-        response.setImage(customerRequestEntity.getImage());
-
+        response.setCustomer(entity.getCustomer());
+        response.setOperator(entity.getOperator());
+        response.setLatitude(entity.getLatitude());
+        response.setLongitude(entity.getLongitude());
+        response.setDescription(entity.getDescription());
+        response.setImage(entity.getImage());
         return response;
     }
 
+    public List<MyRequestDto> getMyRequests() {
+        User user = (User) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
+        List<CustomerRequestEntity> requests = customerRepository.findByCustomerId(user.getId());
+        List<MyRequestDto> result = new ArrayList<>();
 
-    public List<FinalResponseDto> getOperatorResponse(){
-
-        User user= (User) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
-
-        List<CustomerRequestProjection> customerRequestProjection= customerRepository.findOperatorIdByCustomerId(user.getId());
-
-        List<FinalResponseDto> finalResponseDtos= new ArrayList<>();
-
-        for(CustomerRequestProjection cur:customerRequestProjection){
-            FinalResponseDto finalResponseDto= new FinalResponseDto();
-            finalResponseDto.setId(cur.getId());
-            finalResponseDto.setName(cur.getName());
-            finalResponseDto.setPhnumber(cur.getPhoneNumber());
-            finalResponseDto.setMessage(cur.getMessage());
-            finalResponseDto.setStatus(cur.getStatus());
-            finalResponseDto.setPrice(cur.getPrice());
-            finalResponseDto.setPaid(cur.getPaid());
-
-            finalResponseDtos.add(finalResponseDto);
-
+        for (CustomerRequestEntity req : requests) {
+            MyRequestDto dto = new MyRequestDto();
+            dto.setId(req.getId());
+            dto.setGarageName(req.getOperator().getShopName());
+            dto.setGaragePhone(req.getOperator().getPhNumber());
+            dto.setGarageAddress(req.getOperator().getAddress());
+            dto.setGarageImage(req.getOperator().getShopImageUrl());
+            dto.setVehicleType(req.getVechicleType());
+            dto.setDescription(req.getDescription());
+            dto.setImage(req.getImage());
+            dto.setStatus(req.getStatus());
+            dto.setMessage(req.getMessage());
+            dto.setPrice(req.getPrice());
+            dto.setPaid(req.isPaid());
+            dto.setCreatedAt(req.getCreatedAt());
+            dto.setReviewed(reviewRepository.existsByRequestId(req.getId()));
+            result.add(dto);
         }
-
-return finalResponseDtos;
-
+        return result;
     }
 
+    public void cancelRequest(Long requestId) {
+        User user = (User) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
+        CustomerRequestEntity request = customerRequestRepository.findById(requestId)
+                .orElseThrow(() -> new RuntimeException("Request not found with id: " + requestId));
+        if (!request.getCustomer().getId().equals(user.getId())) {
+            throw new RuntimeException("You can only cancel your own request");
+        }
+        if (request.getStatus() != RegisterStatus.PENDING) {
+            throw new RuntimeException("Request can only be cancelled when status is PENDING");
+        }
+        request.setStatus(RegisterStatus.CANCELLED);
+        customerRequestRepository.save(request);
+    }
 
-    public PaymentDto seePrice(PaymentDto paymentDto, Long id) {
-        CustomerRequestEntity customerRequestEntity1 = customerRequestRepository
-                .findById(id)
-                .orElseThrow(() -> new RuntimeException("Did not find this id"));
-
-        System.out.println("Request ID: " + id);
-        System.out.println("Price in DB: " + customerRequestEntity1.getPrice());
-        System.out.println("Amount sent: " + paymentDto.getAmount());
-
-        if (paymentDto.getAmount() < customerRequestEntity1.getPrice()) {
-            throw new RuntimeException("You need to pay actual price");
-        } else {
-            customerRequestEntity1.setPaid(true);
-            customerRequestRepository.save(customerRequestEntity1);
+    public ReviewResponseDto submitReview(Long requestId, ReviewRequestDto dto) {
+        User user = (User) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
+        CustomerRequestEntity request = customerRequestRepository.findById(requestId)
+                .orElseThrow(() -> new RuntimeException("Request not found with id: " + requestId));
+        if (!request.getCustomer().getId().equals(user.getId())) {
+            throw new RuntimeException("You can only review your own request");
+        }
+        if (request.getStatus() != RegisterStatus.COMPLETED) {
+            throw new RuntimeException("You can only submit a review after the service is COMPLETED");
+        }
+        if (reviewRepository.existsByRequestId(requestId)) {
+            throw new RuntimeException("You have already reviewed this request");
         }
 
+        ReviewEntity review = new ReviewEntity();
+        review.setCustomer(user);
+        review.setGarage(request.getOperator());
+        review.setRequest(request);
+        review.setRating(dto.getRating());
+        review.setComment(dto.getComment());
+        reviewRepository.save(review);
+
+        ReviewResponseDto response = new ReviewResponseDto();
+        response.setId(review.getId());
+        response.setCustomerName(user.getName());
+        response.setRating(review.getRating());
+        response.setComment(review.getComment());
+        response.setCreatedAt(review.getCreatedAt());
+        return response;
+    }
+
+    public List<ReviewResponseDto> getGarageReviews(Long garageId) {
+        List<ReviewEntity> reviews = reviewRepository.findByGarageId(garageId);
+        List<ReviewResponseDto> result = new ArrayList<>();
+        for (ReviewEntity review : reviews) {
+            ReviewResponseDto dto = new ReviewResponseDto();
+            dto.setId(review.getId());
+            dto.setCustomerName(review.getCustomer().getName());
+            dto.setRating(review.getRating());
+            dto.setComment(review.getComment());
+            dto.setCreatedAt(review.getCreatedAt());
+            result.add(dto);
+        }
+        return result;
+    }
+
+    public List<FinalResponseDto> getOperatorResponse() {
+        User user = (User) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
+        List<CustomerRequestProjection> projections = customerRepository.findOperatorIdByCustomerId(user.getId());
+        List<FinalResponseDto> result = new ArrayList<>();
+        for (CustomerRequestProjection cur : projections) {
+            FinalResponseDto dto = new FinalResponseDto();
+            dto.setId(cur.getId());
+            dto.setName(cur.getName());
+            dto.setPhnumber(cur.getPhoneNumber());
+            dto.setMessage(cur.getMessage());
+            dto.setStatus(cur.getStatus());
+            dto.setPrice(cur.getPrice());
+            dto.setPaid(cur.getPaid());
+            result.add(dto);
+        }
+        return result;
+    }
+
+    public PaymentDto seePrice(PaymentDto paymentDto, Long id) {
+        CustomerRequestEntity request = customerRequestRepository.findById(id)
+                .orElseThrow(() -> new RuntimeException("Request not found with id: " + id));
+        if (paymentDto.getAmount() < request.getPrice()) {
+            throw new RuntimeException("Amount is less than the required price of " + request.getPrice());
+        }
+        request.setPaid(true);
+        customerRequestRepository.save(request);
         return paymentDto;
     }
 }

@@ -26,6 +26,7 @@ public class AuthController {
         return new ResponseEntity<>(userService.register(userRegisterDto), HttpStatus.OK);
     }
 
+
     @PostMapping("/login")
     public ResponseEntity<Map<String,String>> login(@RequestBody UserLoginDto userLoginDto){
         String jwt= userService.login(userLoginDto);
@@ -33,7 +34,4 @@ public class AuthController {
         response.put("Jwt",jwt);
         return new ResponseEntity<>(response,HttpStatus.OK);
     }
-
-
-
 }

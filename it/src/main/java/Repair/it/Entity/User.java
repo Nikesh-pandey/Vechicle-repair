@@ -31,6 +31,10 @@ private String phoneNumber;
 @Enumerated(EnumType.STRING)
 private Role role;
 
+@Builder.Default
+@Column(columnDefinition = "BOOLEAN DEFAULT TRUE")
+private boolean active = true;
+
     @Override
     public Collection<? extends GrantedAuthority> getAuthorities() {
         return List.of(new SimpleGrantedAuthority("ROLE_" + role));
@@ -55,7 +59,7 @@ private Role role;
 
     @Override
     public boolean isAccountNonLocked() {
-        return true;
+        return active;
     }
 
     @Override

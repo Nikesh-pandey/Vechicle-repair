@@ -18,21 +18,15 @@ public class RequestStatusHistory {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
-
     @ManyToOne
     private User operator;
-
     @ManyToOne
     private User customer;
-
     @ManyToOne
     private CustomerRequestEntity request;
-
     @Enumerated(EnumType.STRING)
     private RegisterStatus action;
-
     private LocalDateTime timestamp;
-
     @PrePersist
     public void onCreate(){
         timestamp = LocalDateTime.now();
